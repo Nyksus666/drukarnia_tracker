@@ -1,19 +1,21 @@
+# Zmieniony plik app.py zgodnie z nowymi wymaganiami
+
 from flask import Flask, render_template, request, redirect, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
+import json
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key"  # zmień na własny klucz w prawdziwym środowisku
+app.secret_key = "super_secret_key"
 
-# Render usuwa pliki przy restarcie, więc przechowujemy bazę lokalnie w katalogu roboczym
-db_path = os.path.join(os.getcwd(), 'database.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+# Baza danych w katalogu roboczym
+DB_PATH = os.path.join(os.getcwd(), 'database.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Lista etapów produkcji
 ETAPY = [
     "przyjęcie",
     "projektowanie",
@@ -31,15 +33,18 @@ ETAPY = [
     "zakończone"
 ]
 
-# Model bazy danych
 class Zlecenie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    numer_glowny = db.Column(db.String(50), nullable=False)
     klient = db.Column(db.String(100), nullable=False)
     opis = db.Column(db.Text, nullable=True)
-    status = db.Column(db.String(50), default="przyjęcie")
+    etapy_niezbedne = db.Column(db.Text, nullable=False)  # JSON encoded list
+    wykonane_etapy = db.Column(db.Text, default='[]')     # JSON encoded list
+    papier = db.Column(db.Text, nullable=True)            # JSON encoded list
+    uwagi = db.Column(db.Text, nullable=True)
+    zatrzymano = db.Column(db.Boolean, default=False)
+    powod_zatrzymania = db.Column(db.Text, nullable=True)
     data_dodania = db.Column(db.DateTime, default=datetime.utcnow)
-
-# ROUTES
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -70,37 +75,48 @@ def add_order():
         return redirect(url_for('login'))
     if request.method == 'POST':
         klient = request.form['klient']
+        numer_glowny = request.form['numer_glowny']
         opis = request.form['opis']
-        nowe = Zlecenie(klient=klient, opis=opis)
+        papier = request.form.getlist('papier')
+        etapy_niezbedne = request.form.getlist('etapy_niezbedne')
+        uwagi = request.form['uwagi']
+
+        nowe = Zlecenie(
+            klient=klient,
+            numer_glowny=numer_glowny,
+            opis=opis,
+            papier=json.dumps(papier),
+            etapy_niezbedne=json.dumps(etapy_niezbedne),
+            uwagi=uwagi
+        )
         db.session.add(nowe)
         db.session.commit()
         return redirect(url_for('index'))
-    return render_template('add_order.html')
+    return render_template('add_order.html', etapy=ETAPY)
 
 @app.route('/update/<int:id>', methods=['POST'])
 def update_status(id):
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     zlecenie = Zlecenie.query.get_or_404(id)
-    new_status = request.form['status']
-    if new_status in ETAPY:
-        zlecenie.status = new_status
-        db.session.commit()
-    return redirect(url_for('index'))
-
-@app.route('/delete/<int:id>', methods=['POST'])
-def delete_order(id):
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    zlecenie = Zlecenie.query.get_or_404(id)
-    db.session.delete(zlecenie)
+    wykonane = request.form.getlist('wykonane_etapy')
+    zlecenie.wykonane_etapy = json.dumps(wykonane)
     db.session.commit()
     return redirect(url_for('index'))
 
-# 🔧 Tworzenie bazy danych przy starcie aplikacji (działa na Render)
+@app.route('/zatrzymaj/<int:id>', methods=['POST'])
+def zatrzymaj(id):
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    powod = request.form['powod']
+    zlecenie = Zlecenie.query.get_or_404(id)
+    zlecenie.zatrzymano = True
+    zlecenie.powod_zatrzymania = powod
+    db.session.commit()
+    return redirect(url_for('index'))
+
 with app.app_context():
     db.create_all()
 
-# 🧪 Lokalny serwer developerski
 if __name__ == '__main__':
     app.run(debug=True)
