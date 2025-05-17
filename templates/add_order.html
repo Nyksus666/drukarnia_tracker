@@ -1,58 +1,44 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-  <meta charset="UTF-8">
-  <title>Dodaj zlecenie</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 p-8">
-  <div class="max-w-3xl mx-auto bg-white shadow rounded p-6">
-    <h2 class="text-2xl font-bold mb-4">Nowe zlecenie</h2>
-    <form method="POST">
-      <label class="block mb-1">Numer zlecenia z głównego systemu:</label>
-      <input type="text" name="numer_glowny" required class="w-full border px-3 py-2 rounded mb-4">
+<form method="POST">
+  <label>Numer zlecenia:</label>
+  <input type="text" name="numer_glowny" required class="w-full mb-4 border px-3 py-2 rounded">
 
-      <label class="block mb-1">Klient:</label>
-      <input type="text" name="klient" required class="w-full border px-3 py-2 rounded mb-4">
+  <label>Klient:</label>
+  <input type="text" name="klient" required class="w-full mb-4 border px-3 py-2 rounded">
 
-      <label class="block mb-1">Opis:</label>
-      <textarea name="opis" rows="3" class="w-full border px-3 py-2 rounded mb-4"></textarea>
+  <label>Opis:</label>
+  <textarea name="opis" class="w-full mb-4 border px-3 py-2 rounded"></textarea>
 
-      <label class="block mb-1">Niezbędne etapy:</label>
-      <div class="grid grid-cols-2 gap-2 mb-4">
-        {% for etap in etapy %}
-          <label class="flex items-center">
-            <input type="checkbox" name="etapy_niezbedne" value="{{ etap }}" class="mr-2">
-            {{ etap }}
-          </label>
-        {% endfor %}
-      </div>
-
-      <label class="block mb-1">Zapotrzebowanie na papier (dodaj wiele):</label>
-      <div id="papier-wrapper" class="mb-4 space-y-2">
-        <input type="text" name="papier" class="w-full border px-3 py-2 rounded">
-      </div>
-      <button type="button" onclick="addPaperField()" class="text-sm text-blue-500 hover:underline mb-4">+ Dodaj kolejną pozycję</button>
-
-      <label class="block mb-1">Uwagi od wprowadzającego:</label>
-      <textarea name="uwagi" rows="3" class="w-full border px-3 py-2 rounded mb-4"></textarea>
-
-      <div class="flex justify-between">
-        <a href="/" class="text-blue-500 hover:underline">← Wróć</a>
-        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Zapisz</button>
-      </div>
-    </form>
+  <label>Etapy:</label>
+  <div class="grid grid-cols-2 mb-4 gap-2">
+    {% for etap in etapy %}
+      <label><input type="checkbox" name="etapy_niezbedne" value="{{ etap }}"> {{ etap }}</label>
+    {% endfor %}
   </div>
 
-  <script>
-    function addPaperField() {
-      const wrapper = document.getElementById('papier-wrapper');
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.name = 'papier';
-      input.className = 'w-full border px-3 py-2 rounded';
-      wrapper.appendChild(input);
-    }
-  </script>
-</body>
-</html>
+  <label>Zapotrzebowanie na papier:</label>
+  <div id="papier-list" class="mb-4">
+    <input list="papiery" name="papier" class="w-full mb-2 border px-3 py-2 rounded">
+  </div>
+  <datalist id="papiery">
+    {% for p in papiery %}
+      <option value="{{ p }}">
+    {% endfor %}
+  </datalist>
+  <button type="button" onclick="addPapier()">+ Dodaj papier</button>
+
+  <label class="block mt-4">Uwagi:</label>
+  <textarea name="uwagi" class="w-full mb-4 border px-3 py-2 rounded"></textarea>
+
+  <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Zapisz zlecenie</button>
+</form>
+
+<script>
+function addPapier() {
+  const wrapper = document.getElementById('papier-list');
+  const input = document.createElement('input');
+  input.name = 'papier';
+  input.setAttribute('list', 'papiery');
+  input.className = 'w-full mb-2 border px-3 py-2 rounded';
+  wrapper.appendChild(input);
+}
+</script>
