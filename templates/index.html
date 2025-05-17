@@ -1,38 +1,78 @@
-{% for z in zlecenia %}
-<div class="bg-white p-4 mb-4 rounded shadow">
-  <h2 class="text-xl font-bold">{{ z.numer_glowny }} – {{ z.klient }}</h2>
-  <p>{{ z.opis }}</p>
-  <p><strong>Papier:</strong> {{ z.papier | join(', ') }}</p>
-  <p><strong>Uwagi:</strong> {{ z.uwagi }}</p>
-
-  <form method="POST" action="/update/{{ z.id }}">
-    <div class="grid grid-cols-2 gap-2 mt-2">
-      {% for etap in z.etapy_niezbedne %}
-        <label class="flex items-center">
-          <input type="checkbox" name="wykonane_etapy" value="{{ etap }}" {% if etap in z.wykonane_etapy %}checked{% endif %}>
-          <span class="ml-2">{{ etap }}</span>
-          {% if z.historia_etapow[etap] %}
-            <span class="text-xs text-gray-500 ml-4">({{ z.historia_etapow[etap][:16] }})</span>
-          {% endif %}
-        </label>
-      {% endfor %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Zlecenia produkcyjne</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Zlecenia produkcyjne</h1>
+    <div>
+      <a href="/add" class="bg-green-600 text-white px-4 py-2 rounded mr-2">+ Dodaj zlecenie</a>
+      <a href="/logout" class="text-red-600 hover:underline">Wyloguj</a>
     </div>
-    <button class="bg-blue-500 text-white px-3 py-1 mt-2 rounded">✔ Zapisz etapy</button>
-  </form>
+  </div>
 
-  {% if not z.zakonczone and z.etapy_niezbedne|length == z.wykonane_etapy|length %}
-    <form method="POST" action="/zakoncz/{{ z.id }}" class="mt-2">
-      <button class="bg-green-700 text-white px-3 py-2 rounded">✅ Zakończ zlecenie</button>
-    </form>
-  {% endif %}
+  {% if zlecenia %}
+    {% for z in zlecenia %}
+      <div class="bg-white p-4 rounded shadow mb-6">
+        <h2 class="text-xl font-bold mb-1">#{{ z.numer_glowny }} — {{ z.klient }}</h2>
+        <p class="text-sm text-gray-600 mb-2">Dodano: {{ z.data_dodania.strftime('%Y-%m-%d %H:%M') }}</p>
 
-  {% if not z.zatrzymano %}
-  <form method="POST" action="/zatrzymaj/{{ z.id }}" class="mt-4">
-    <textarea name="powod" placeholder="Powód zatrzymania" class="w-full mb-2 border px-2 py-1 rounded"></textarea>
-    <button class="bg-red-600 text-white px-3 py-1 rounded">⛔ Zatrzymaj</button>
-  </form>
+        {% if z.opis %}
+          <p class="mb-2"><strong>Opis:</strong> {{ z.opis }}</p>
+        {% endif %}
+
+        {% if z.papier %}
+          <p class="mb-2"><strong>Papier:</strong> {{ z.papier | join(', ') }}</p>
+        {% endif %}
+
+        {% if z.uwagi %}
+          <p class="mb-2"><strong>Uwagi:</strong> {{ z.uwagi }}</p>
+        {% endif %}
+
+        <form method="POST" action="/update/{{ z.id }}">
+          <div class="mt-4 mb-2">
+            <h3 class="font-semibold mb-2">Etapy:</h3>
+            <div class="grid grid-cols-2 gap-2">
+              {% for etap in z.etapy_niezbedne %}
+                <label class="flex items-center">
+                  <input type="checkbox" name="wykonane_etapy" value="{{ etap }}"
+                    {% if etap in z.wykonane_etapy %}checked{% endif %} class="mr-2">
+                  {{ etap }}
+                  {% if z.historia_etapow.get(etap) %}
+                    <span class="text-xs text-gray-500 ml-2">({{ z.historia_etapow[etap][:16].replace('T', ' ') }})</span>
+                  {% endif %}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+          <button class="bg-blue-600 text-white px-4 py-1 rounded mt-2">✔ Zapisz etapy</button>
+        </form>
+
+        {% if not z.zakonczone and z.etapy_niezbedne|length == z.wykonane_etapy|length %}
+          <form method="POST" action="/zakoncz/{{ z.id }}" class="mt-3">
+            <button class="bg-green-700 text-white px-4 py-2 rounded">✅ Zakończ zlecenie</button>
+          </form>
+        {% elif z.zakonczone %}
+          <p class="text-green-600 font-bold mt-3">✅ Zlecenie zakończone</p>
+        {% endif %}
+
+        {% if not z.zatrzymano %}
+          <form method="POST" action="/zatrzymaj/{{ z.id }}" class="mt-4">
+            <textarea name="powod" placeholder="Powód zatrzymania" rows="2"
+              class="w-full border px-3 py-2 rounded mb-2"></textarea>
+            <button class="bg-red-600 text-white px-4 py-2 rounded">⛔ Zatrzymaj</button>
+          </form>
+        {% else %}
+          <p class="text-red-600 font-bold mt-4">⛔ Zatrzymano</p>
+          <p class="text-sm text-gray-700">Powód: {{ z.powod_zatrzymania }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
   {% else %}
-    <p class="text-red-600 mt-2">⛔ Zatrzymano: {{ z.powod_zatrzymania }}</p>
+    <p class="text-gray-600">Brak zleceń w systemie.</p>
   {% endif %}
-</div>
-{% endfor %}
+</body>
+</html>
