@@ -21,20 +21,12 @@
       </div>
 
       <div class="mt-4">
-        <label class="block font-semibold mb-1">Opis:</label>
-        <textarea name="opis" rows="2" class="w-full border px-3 py-2 rounded"></textarea>
-      </div>
-
-      <div class="mt-4">
-        <label class="block font-semibold mb-1">Etapy niezbędne:</label>
-        <div class="grid grid-cols-2 gap-2">
-          {% for etap in etapy %}
-            <label class="flex items-center">
-              <input type="checkbox" name="etapy_niezbedne" value="{{ etap }}" class="mr-2">
-              {{ etap }}
-            </label>
+        <label class="block font-semibold mb-1">Produkt:</label>
+        <select name="produkt" required class="w-full border px-3 py-2 rounded">
+          {% for prod in produkty %}
+            <option value="{{ prod }}">{{ prod }}</option>
           {% endfor %}
-        </div>
+        </select>
       </div>
 
       <div class="mt-6">
