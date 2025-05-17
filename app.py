@@ -115,6 +115,14 @@ def zatrzymaj(id):
     z.powod_zatrzymania = request.form['powod']
     db.session.commit()
     return redirect(url_for('index'))
+    
+@app.route('/wznów/<int:id>', methods=['POST'])
+def wznow_zlecenie(id):
+    zlecenie = Zlecenie.query.get_or_404(id)
+    zlecenie.zatrzymano = False
+    zlecenie.powod_zatrzymania = None
+    db.session.commit()
+    return redirect(url_for('index'))
 
 @app.route('/zakoncz/<int:id>', methods=['POST'])
 def zakoncz(id):
