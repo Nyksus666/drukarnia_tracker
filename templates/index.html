@@ -2,30 +2,27 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <title>Panel zleceń</title>
+  <title>Zlecenia</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     function toggleDetails(id) {
-      const box = document.getElementById('details-' + id);
-      box.classList.toggle('hidden');
+      document.getElementById('details-' + id).classList.toggle('hidden');
     }
     function onFilterChange(select) {
-      const val = select.value;
-      window.location.href = '/?filtr=' + val;
+      window.location.href = '/?filtr=' + select.value;
     }
   </script>
 </head>
 <body class="bg-gray-100 p-6">
-
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold text-gray-800">Zlecenia produkcyjne</h1>
     <div class="flex gap-4">
-      <a href="/add" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">+ Dodaj zlecenie</a>
+      <a href="/add" class="bg-green-600 text-white px-4 py-2 rounded">+ Dodaj zlecenie</a>
       <select onchange="onFilterChange(this)" class="border px-2 py-1 rounded">
-        <option value="wszystkie" {% if filtr == 'wszystkie' %}selected{% endif %}>Pokaż wszystkie</option>
-        <option value="w_produkcji" {% if filtr == 'w_produkcji' %}selected{% endif %}>Tylko w produkcji</option>
-        <option value="zatrzymane" {% if filtr == 'zatrzymane' %}selected{% endif %}>Tylko zatrzymane</option>
-        <option value="zakonczone" {% if filtr == 'zakonczone' %}selected{% endif %}>Tylko zakończone</option>
+        <option value="wszystkie" {% if filtr == 'wszystkie' %}selected{% endif %}>Wszystkie</option>
+        <option value="w_produkcji" {% if filtr == 'w_produkcji' %}selected{% endif %}>W produkcji</option>
+        <option value="zatrzymane" {% if filtr == 'zatrzymane' %}selected{% endif %}>Zatrzymane</option>
+        <option value="zakonczone" {% if filtr == 'zakonczone' %}selected{% endif %}>Zakończone</option>
       </select>
       <a href="/logout" class="text-red-600 hover:underline">Wyloguj</a>
     </div>
@@ -45,17 +42,13 @@
       <div class="flex justify-between items-center cursor-pointer" onclick="toggleDetails({{ z.id }})">
         <div>
           <p class="font-bold text-lg">{{ z.numer_glowny }} — {{ z.klient }}</p>
+          <p class="text-sm text-gray-700">Produkt: {{ z.produkt }}</p>
         </div>
-        <div>
-          <button class="text-blue-600 hover:underline text-sm">Szczegóły ▼</button>
-        </div>
+        <button class="text-blue-600 hover:underline text-sm">Szczegóły ▼</button>
       </div>
 
       <div id="details-{{ z.id }}" class="mt-4 hidden">
-        {% if z.opis %}<p><strong>Opis:</strong> {{ z.opis }}</p>{% endif %}
-        {% if z.uwagi %}<p><strong>Uwagi:</strong> {{ z.uwagi }}</p>{% endif %}
-        <div>
-          <strong>Papier:</strong>
+        <div><strong>Papier:</strong>
           <ul class="list-disc ml-6">
             {% for p in z.papier %}
               <li>{{ p.typ }} – {{ p.ilosc }}</li>
@@ -68,8 +61,9 @@
           <div class="grid grid-cols-2 gap-2">
             {% for etap in z.etapy_niezbedne %}
               <label class="flex items-center">
-                <input type="checkbox" name="wykonane_etapy" value="{{ etap }}" {% if etap in z.wykonane_etapy %}checked{% endif %}
-                {% if z.zatrzymano %}disabled{% endif %} class="mr-2">
+                <input type="checkbox" name="wykonane_etapy" value="{{ etap }}"
+                  {% if etap in z.wykonane_etapy %}checked{% endif %}
+                  {% if z.zatrzymano %}disabled{% endif %} class="mr-2">
                 {{ etap }}
                 {% if z.historia_etapow.get(etap) %}
                   <span class="text-xs text-gray-500 ml-2">({{ z.historia_etapow[etap][:16].replace('T', ' ') }})</span>
@@ -77,7 +71,7 @@
               </label>
             {% endfor %}
           </div>
-          {% if not z.zatrzymano %}
+          {% if not z.zatrzymano and not z.zakonczone %}
             <button class="mt-3 bg-blue-600 text-white px-4 py-2 rounded">Zapisz etapy</button>
           {% endif %}
         </form>
@@ -94,7 +88,7 @@
           <form method="POST" action="/wznów/{{ z.id }}" class="mt-2">
             <button class="bg-yellow-500 text-white px-4 py-1 rounded">🔄 Wznów zlecenie</button>
           </form>
-        {% else %}
+        {% elif not z.zakonczone %}
           <form method="POST" action="/zatrzymaj/{{ z.id }}" class="mt-4">
             <textarea name="powod" rows="2" class="w-full border rounded px-3 py-2 mb-2" placeholder="Powód zatrzymania..."></textarea>
             <button class="bg-red-600 text-white px-4 py-2 rounded">⛔ Zatrzymaj</button>
