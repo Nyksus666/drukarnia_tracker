@@ -67,6 +67,13 @@ def index():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     zlecenia = Zlecenie.query.order_by(Zlecenie.data_dodania.desc()).all()
+
+    # Dekodowanie JSON w modelach do użycia w szablonie
+    for z in zlecenia:
+        z.etapy_niezbedne = json.loads(z.etapy_niezbedne or '[]')
+        z.wykonane_etapy = json.loads(z.wykonane_etapy or '[]')
+        z.papier = json.loads(z.papier or '[]')
+
     return render_template('index.html', zlecenia=zlecenia, etapy=ETAPY)
 
 @app.route('/add', methods=['GET', 'POST'])
