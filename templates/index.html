@@ -9,26 +9,36 @@
       const box = document.getElementById('details-' + id);
       box.classList.toggle('hidden');
     }
+    function onFilterChange(select) {
+      const val = select.value;
+      window.location.href = '/?filtr=' + val;
+    }
   </script>
 </head>
 <body class="bg-gray-100 p-6">
 
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold text-gray-800">Zlecenia produkcyjne</h1>
-    <div>
-      <a href="/add" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">+ Nowe zlecenie</a>
-      <a href="/logout" class="ml-4 text-red-500 hover:underline">Wyloguj</a>
+    <div class="flex gap-4">
+      <a href="/add" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">+ Dodaj zlecenie</a>
+      <select onchange="onFilterChange(this)" class="border px-2 py-1 rounded">
+        <option value="wszystkie" {% if filtr == 'wszystkie' %}selected{% endif %}>Pokaż wszystkie</option>
+        <option value="w_produkcji" {% if filtr == 'w_produkcji' %}selected{% endif %}>Tylko w produkcji</option>
+        <option value="zatrzymane" {% if filtr == 'zatrzymane' %}selected{% endif %}>Tylko zatrzymane</option>
+        <option value="zakonczone" {% if filtr == 'zakonczone' %}selected{% endif %}>Tylko zakończone</option>
+      </select>
+      <a href="/logout" class="text-red-600 hover:underline">Wyloguj</a>
     </div>
   </div>
 
   {% for z in zlecenia %}
     {% set kolor = 'bg-white' %}
     {% if z.zatrzymano %}
-      {% set kolor = 'bg-red-100 border-red-400' %}
+      {% set kolor = 'bg-red-100 border-red-500' %}
     {% elif z.zakonczone %}
-      {% set kolor = 'bg-blue-100 border-blue-400' %}
+      {% set kolor = 'bg-blue-100 border-blue-500' %}
     {% else %}
-      {% set kolor = 'bg-green-100 border-green-400' %}
+      {% set kolor = 'bg-green-100 border-green-500' %}
     {% endif %}
 
     <div class="border-l-4 {{ kolor }} p-4 rounded shadow mb-4">
@@ -42,13 +52,16 @@
       </div>
 
       <div id="details-{{ z.id }}" class="mt-4 hidden">
-        {% if z.opis %}
-          <p><strong>Opis:</strong> {{ z.opis }}</p>
-        {% endif %}
-        {% if z.uwagi %}
-          <p><strong>Uwagi:</strong> {{ z.uwagi }}</p>
-        {% endif %}
-        <p><strong>Papier:</strong> {{ z.papier | join(', ') }}</p>
+        {% if z.opis %}<p><strong>Opis:</strong> {{ z.opis }}</p>{% endif %}
+        {% if z.uwagi %}<p><strong>Uwagi:</strong> {{ z.uwagi }}</p>{% endif %}
+        <div>
+          <strong>Papier:</strong>
+          <ul class="list-disc ml-6">
+            {% for p in z.papier %}
+              <li>{{ p.typ }} – {{ p.ilosc }}</li>
+            {% endfor %}
+          </ul>
+        </div>
 
         <form method="POST" action="/update/{{ z.id }}" class="mt-3">
           <h4 class="font-semibold mb-2">Etapy:</h4>
@@ -58,7 +71,7 @@
                 <input type="checkbox" name="wykonane_etapy" value="{{ etap }}" {% if etap in z.wykonane_etapy %}checked{% endif %}
                 {% if z.zatrzymano %}disabled{% endif %} class="mr-2">
                 {{ etap }}
-                {% if z.historia_etapow[etap] %}
+                {% if z.historia_etapow.get(etap) %}
                   <span class="text-xs text-gray-500 ml-2">({{ z.historia_etapow[etap][:16].replace('T', ' ') }})</span>
                 {% endif %}
               </label>
@@ -90,6 +103,5 @@
       </div>
     </div>
   {% endfor %}
-
 </body>
 </html>
