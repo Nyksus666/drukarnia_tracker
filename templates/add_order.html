@@ -11,7 +11,7 @@
     <form method="POST">
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block font-semibold mb-1">Numer zlecenia z głównego systemu:</label>
+          <label class="block font-semibold mb-1">Numer zlecenia:</label>
           <input type="text" name="numer_glowny" required class="w-full border px-3 py-2 rounded">
         </div>
         <div>
@@ -37,21 +37,19 @@
         </div>
       </div>
 
-      <div class="mt-4">
-        <label class="block font-semibold mb-1">Zapotrzebowanie na papier:</label>
+      <div class="mt-6">
+        <label class="block font-semibold mb-2">Zapotrzebowanie na papier:</label>
         <div id="papier-list">
-          <input list="papiery" name="papier" class="w-full border px-3 py-2 rounded mb-2">
+          <div class="flex gap-2 mb-2">
+            <input type="text" name="papier_typ" placeholder="Rodzaj papieru" class="flex-1 border px-3 py-2 rounded">
+            <input type="text" name="papier_ilosc" placeholder="Ilość" class="w-40 border px-3 py-2 rounded">
+          </div>
         </div>
-        <datalist id="papiery">
-          {% for p in papiery %}
-            <option value="{{ p }}">
-          {% endfor %}
-        </datalist>
-        <button type="button" onclick="addPapier()" class="text-blue-500 text-sm mt-1">+ Dodaj kolejny papier</button>
+        <button type="button" onclick="addPapier()" class="text-blue-600 text-sm mt-1">+ Dodaj kolejny papier</button>
       </div>
 
       <div class="mt-4">
-        <label class="block font-semibold mb-1">Uwagi od wprowadzającego:</label>
+        <label class="block font-semibold mb-1">Uwagi:</label>
         <textarea name="uwagi" rows="2" class="w-full border px-3 py-2 rounded"></textarea>
       </div>
 
@@ -64,12 +62,13 @@
   <script>
     function addPapier() {
       const container = document.getElementById('papier-list');
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.name = 'papier';
-      input.setAttribute('list', 'papiery');
-      input.className = 'w-full border px-3 py-2 rounded mb-2';
-      container.appendChild(input);
+      const div = document.createElement('div');
+      div.className = "flex gap-2 mb-2";
+      div.innerHTML = `
+        <input type="text" name="papier_typ" placeholder="Rodzaj papieru" class="flex-1 border px-3 py-2 rounded">
+        <input type="text" name="papier_ilosc" placeholder="Ilość" class="w-40 border px-3 py-2 rounded">
+      `;
+      container.appendChild(div);
     }
   </script>
 </body>
