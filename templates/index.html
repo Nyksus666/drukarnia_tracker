@@ -1,59 +1,38 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-  <meta charset="UTF-8">
-  <title>Panel Zleceń</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 p-8">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Zlecenia produkcyjne</h1>
-    <div>
-      <a href="/add" class="bg-green-600 text-white px-4 py-2 rounded mr-2">+ Dodaj zlecenie</a>
-      <a href="/logout" class="text-red-500 hover:underline">Wyloguj</a>
-    </div>
-  </div>
+{% for z in zlecenia %}
+<div class="bg-white p-4 mb-4 rounded shadow">
+  <h2 class="text-xl font-bold">{{ z.numer_glowny }} – {{ z.klient }}</h2>
+  <p>{{ z.opis }}</p>
+  <p><strong>Papier:</strong> {{ z.papier | join(', ') }}</p>
+  <p><strong>Uwagi:</strong> {{ z.uwagi }}</p>
 
-  {% for z in zlecenia %}
-  <div class="bg-white p-4 rounded shadow mb-4">
-    <h2 class="text-xl font-bold">#{{ z.numer_glowny }} – {{ z.klient }}</h2>
-    <p class="text-sm text-gray-600 mb-2">{{ z.opis }}</p>
-    
-    <div class="text-sm mb-2">
-      <strong>Etapy niezbędne:</strong> {{ z.etapy_niezbedne | tojson | safe }}
+  <form method="POST" action="/update/{{ z.id }}">
+    <div class="grid grid-cols-2 gap-2 mt-2">
+      {% for etap in z.etapy_niezbedne %}
+        <label class="flex items-center">
+          <input type="checkbox" name="wykonane_etapy" value="{{ etap }}" {% if etap in z.wykonane_etapy %}checked{% endif %}>
+          <span class="ml-2">{{ etap }}</span>
+          {% if z.historia_etapow[etap] %}
+            <span class="text-xs text-gray-500 ml-4">({{ z.historia_etapow[etap][:16] }})</span>
+          {% endif %}
+        </label>
+      {% endfor %}
     </div>
-    <div class="text-sm mb-2">
-      <strong>Papier:</strong> {{ z.papier | tojson | safe }}
-    </div>
-    <div class="text-sm mb-2">
-      <strong>Uwagi:</strong> {{ z.uwagi or "brak" }}
-    </div>
+    <button class="bg-blue-500 text-white px-3 py-1 mt-2 rounded">✔ Zapisz etapy</button>
+  </form>
 
-    <form method="POST" action="/update/{{ z.id }}" class="mb-2">
-      <fieldset class="grid grid-cols-2 gap-2">
-{% set wykonane = z.wykonane_etapy %}
-{% for etap in z.etapy_niezbedne %}
-          <label class="flex items-center">
-            <input type="checkbox" name="wykonane_etapy" value="{{ etap }}" {% if etap in wykonane %}checked{% endif %} class="mr-2">
-            {{ etap }}
-          </label>
-        {% endfor %}
-      </fieldset>
-      <button type="submit" class="mt-2 bg-blue-600 text-white px-3 py-1 rounded">✔ Zapisz wykonane</button>
+  {% if not z.zakonczone and z.etapy_niezbedne|length == z.wykonane_etapy|length %}
+    <form method="POST" action="/zakoncz/{{ z.id }}" class="mt-2">
+      <button class="bg-green-700 text-white px-3 py-2 rounded">✅ Zakończ zlecenie</button>
     </form>
+  {% endif %}
 
-    <form method="POST" action="/zatrzymaj/{{ z.id }}">
-      {% if not z.zatrzymano %}
-        <div class="mt-2">
-          <textarea name="powod" placeholder="Dlaczego zatrzymano?" rows="2" class="w-full border px-3 py-2 rounded mb-2"></textarea>
-          <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded">⛔ Zatrzymano</button>
-        </div>
-      {% else %}
-        <p class="text-red-600 font-bold">ZATRZYMANO</p>
-        <p class="text-sm text-gray-700">Powód: {{ z.powod_zatrzymania }}</p>
-      {% endif %}
-    </form>
-  </div>
-  {% endfor %}
-</body>
-</html>
+  {% if not z.zatrzymano %}
+  <form method="POST" action="/zatrzymaj/{{ z.id }}" class="mt-4">
+    <textarea name="powod" placeholder="Powód zatrzymania" class="w-full mb-2 border px-2 py-1 rounded"></textarea>
+    <button class="bg-red-600 text-white px-3 py-1 rounded">⛔ Zatrzymaj</button>
+  </form>
+  {% else %}
+    <p class="text-red-600 mt-2">⛔ Zatrzymano: {{ z.powod_zatrzymania }}</p>
+  {% endif %}
+</div>
+{% endfor %}
