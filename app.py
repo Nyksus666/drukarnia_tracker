@@ -4,17 +4,16 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key"
+app.secret_key = "super_secret_key"  # zmień na własny klucz w prawdziwym środowisku
 
-# Używamy ścieżki zgodnej z Render (czyści /tmp)
+# Render usuwa pliki przy restarcie, więc przechowujemy bazę lokalnie w katalogu roboczym
 db_path = os.path.join(os.getcwd(), 'database.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Inicjalizacja bazy
 db = SQLAlchemy(app)
 
-# Etapy produkcji
+# Lista etapów produkcji
 ETAPY = [
     "przyjęcie",
     "projektowanie",
@@ -98,7 +97,10 @@ def delete_order(id):
     db.session.commit()
     return redirect(url_for('index'))
 
+# 🔧 Tworzenie bazy danych przy starcie aplikacji (działa na Render)
+with app.app_context():
+    db.create_all()
+
+# 🧪 Lokalny serwer developerski
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
