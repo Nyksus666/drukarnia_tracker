@@ -1,15 +1,20 @@
-# app.py
 from flask import Flask, render_template, request, redirect, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import os
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key"  # zmień na bezpieczny klucz
-import os
+app.secret_key = "super_secret_key"
+
+# Używamy ścieżki zgodnej z Render (czyści /tmp)
 db_path = os.path.join(os.getcwd(), 'database.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Lista etapów produkcji
+# Inicjalizacja bazy
+db = SQLAlchemy(app)
+
+# Etapy produkcji
 ETAPY = [
     "przyjęcie",
     "projektowanie",
@@ -27,7 +32,7 @@ ETAPY = [
     "zakończone"
 ]
 
-# Model zlecenia
+# Model bazy danych
 class Zlecenie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     klient = db.Column(db.String(100), nullable=False)
