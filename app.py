@@ -12,16 +12,27 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 ETAPY = [
-    "przyjęcie", "projektowanie", "akceptacja", "druk", "falcowanie",
-    "zbieranie", "szycie", "klejenie", "sztancowanie/bigowanie",
-    "foliowanie", "cięcie", "pakowanie", "wysyłka"
+    "przyjęcie", "projektowanie", "akceptacja", "druk", "foliowanie", "lakierowanie",
+    "falcowanie", "zbieranie", "szycie", "klejenie", "sztancowanie/bigowanie",
+    "cięcie", "pakowanie", "wysyłka"
 ]
+
+PRODUKTY_ETAPY = {
+    "Wizytówka bez folii": ["przyjęcie", "projektowanie", "akceptacja", "druk", "cięcie", "pakowanie", "wysyłka"],
+    "Wizytówka foliowana": ["przyjęcie", "projektowanie", "akceptacja", "druk", "foliowanie", "cięcie", "pakowanie", "wysyłka"],
+    "Wizytówka z Lakierem UV": ["przyjęcie", "projektowanie", "akceptacja", "druk", "foliowanie", "lakierowanie", "cięcie", "pakowanie", "wysyłka"],
+    "Ulotka": ["przyjęcie", "projektowanie", "akceptacja", "druk", "cięcie", "pakowanie", "wysyłka"],
+    "Ulotka falcowana": ["przyjęcie", "projektowanie", "akceptacja", "druk", "falcowanie", "pakowanie", "wysyłka"],
+    "Teczka": ["przyjęcie", "projektowanie", "akceptacja", "druk", "sztancowanie/bigowanie", "pakowanie", "wysyłka"],
+    "Broszura szyta": ["przyjęcie", "projektowanie", "akceptacja", "druk", "falcowanie", "zbieranie", "szycie", "pakowanie", "wysyłka"],
+    "Broszura klejona": ["przyjęcie", "projektowanie", "akceptacja", "druk", "falcowanie", "zbieranie", "klejenie", "pakowanie", "wysyłka"]
+}
 
 class Zlecenie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     numer_glowny = db.Column(db.String(50), nullable=False)
     klient = db.Column(db.String(100), nullable=False)
-    opis = db.Column(db.Text)
+    produkt = db.Column(db.String(100))
     etapy_niezbedne = db.Column(db.Text)
     wykonane_etapy = db.Column(db.Text, default='[]')
     historia_etapow = db.Column(db.Text, default='{}')
@@ -50,8 +61,8 @@ def index():
         return redirect(url_for('login'))
 
     filtr = request.args.get("filtr", "wszystkie")
-
     q = Zlecenie.query.order_by(Zlecenie.data_dodania.desc())
+
     if filtr == "zatrzymane":
         q = q.filter_by(zatrzymano=True)
     elif filtr == "w_produkcji":
@@ -76,9 +87,8 @@ def add_order():
     if request.method == 'POST':
         klient = request.form['klient']
         numer = request.form['numer_glowny']
-        opis = request.form['opis']
+        produkt = request.form['produkt']
         uwagi = request.form['uwagi']
-        etapy = request.form.getlist('etapy_niezbedne')
 
         papiery = []
         typy = request.form.getlist('papier_typ')
@@ -87,10 +97,12 @@ def add_order():
             if t.strip() and i.strip():
                 papiery.append({"typ": t.strip(), "ilosc": i.strip()})
 
+        etapy = PRODUKTY_ETAPY.get(produkt, [])
+
         z = Zlecenie(
             klient=klient,
             numer_glowny=numer,
-            opis=opis,
+            produkt=produkt,
             etapy_niezbedne=json.dumps(etapy),
             papier=json.dumps(papiery),
             uwagi=uwagi
@@ -99,7 +111,7 @@ def add_order():
         db.session.commit()
         return redirect(url_for('index'))
 
-    return render_template('add_order.html', etapy=ETAPY)
+    return render_template('add_order.html', produkty=list(PRODUKTY_ETAPY.keys()))
 
 @app.route('/update/<int:id>', methods=['POST'])
 def update_status(id):
